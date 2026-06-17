@@ -26,7 +26,7 @@ print(f"ჩაიტვირთა {len(df)} ჩანაწერი")
 X = df[['duration', 'packet_count', 'byte_count', 'port', 'protocol']]
 y = df['attack_type']
 
-# Train/Test Split
+
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -53,7 +53,6 @@ cm = confusion_matrix(y_test, y_pred).tolist()
 # მოდელის შენახვა
 joblib.dump(model, "cyber_model.pkl")
 
-# მეტრიკების შენახვა
 metrics = {
     "accuracy": float(acc),
     "confusion_matrix": cm
@@ -62,6 +61,6 @@ metrics = {
 with open("metrics.json", "w") as f:
     json.dump(metrics, f, indent=4)
 
-print(f"\nმოდელი წარმატებით გაიწვრთნა!")
+print(f"მოდელი წარმატებით გაიწვრთნა!")
 print(f"Accuracy: {acc * 100:.2f}%")
 print("შეიქმნა ახალი ფაილები: cyber_model.pkl და metrics.json")

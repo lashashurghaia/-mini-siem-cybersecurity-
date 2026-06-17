@@ -39,7 +39,7 @@ st.markdown("""
         font-family: 'Segoe UI', sans-serif; 
     }
 
-    /*  ტექსტის სტილი */
+    /* ტექსტის სტილი */
     .stMarkdown, p, span { color: #cbd5e1; }
 
     /* მონაცემთა ცხრილების სტილი */
@@ -105,7 +105,6 @@ severity_levels = {
 if menu == "რეალური დროის მონიტორინგი":
     st.subheader("ქსელური ტრაფიკის ანალიზი რეალურ დროში")
     if st.button("ტრაფიკის სიმულაციის გაშვება", key="live_sim"):
-
         if os.path.exists("network_traffic.csv"):
             df_traffic = pd.read_csv("network_traffic.csv")
             samples = df_traffic.sample(20).to_dict(orient="records")
@@ -133,17 +132,32 @@ if menu == "რეალური დროის მონიტორინგ
 
                 if prediction != 0:
                     severity = severity_levels[prediction]
-                    st.markdown(f"""
-                    <div style="background-color: #2d1a1a; border: 1px solid #7f1d1d; padding: 14px; border-radius: 6px; margin-bottom: 10px;">
-                        <span style="color: #fca5a5; font-weight: 700;">კრიტიკული საფრთხე: {attack_type}</span><br>
-                        <span style="color: #fca5a5;">საფრთხის დონე: {severity}</span><br>
-                        <span style="color: #cbd5e1;"> <b>წყარო IP:</b> {ip} | <b>პორტი:</b> {int(packet['port'])} | <b>დრო:</b> {current_time} </span><br>
-                        <span style="color: #fca5a5; font-size: 13px;"> <b>სისტემის რეაგირება:</b> წყარო დაიბლოკა. მონაცემები შეინახა ბაზაში. </span>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    
+                    if severity == "მაღალი":
+                        # წითელი ბარათი 
+                        st.markdown(f"""
+                        <div style="background-color: #2d1a1a; border: 1px solid #7f1d1d; padding: 14px; border-radius: 6px; margin-bottom: 10px;">
+                            <span style="color: #fca5a5; font-weight: 700;">კრიტიკული საფრთხე: {attack_type}</span><br>
+                            <span style="color: #fca5a5;">საფრთხის დონე: {severity}</span><br>
+                            <span style="color: #cbd5e1;"> <b>წყარო IP:</b> {ip} | <b>პორტი:</b> {int(packet['port'])} | <b>დრო:</b> {current_time} </span><br>
+                            <span style="color: #fca5a5; font-size: 13px;"> <b>სისტემის რეაგირება:</b> წყარო დაიბლოკა. მონაცემები შეინახა ბაზაში. </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        log_to_db(ip, current_time, "დაბლოკილი", attack_type)
+                    else:
+                        # ყვითელი ბარათი 
+                        st.markdown(f"""
+                        <div style="background-color: #2e2416; border: 1px solid #c27c0e; padding: 14px; border-radius: 6px; margin-bottom: 10px;">
+                            <span style="color: #fde047; font-weight: 700;">საშუალო საფრთხე: {attack_type}</span><br>
+                            <span style="color: #fde047;">საფრთხის დონე: {severity}</span><br>
+                            <span style="color: #cbd5e1;"> <b>წყარო IP:</b> {ip} | <b>პორტი:</b> {int(packet['port'])} | <b>დრო:</b> {current_time} </span><br>
+                            <span style="color: #fde047; font-size: 13px;"> <b>სისტემის რეაგირება:</b> მოვლენა დაფიქსირებულია, ადმინისტრატორი ინფორმირებულია. </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        log_to_db(ip, current_time, "გაფრთხილება", attack_type)
 
-                    log_to_db(ip, current_time, "დაბლოკილი", attack_type)
                 else:
+                    # მწვანე ბარათი 
                     st.markdown(f"""
                     <div style="background-color: #14241a; border: 1px solid #064e3b; padding: 14px; border-radius: 6px; margin-bottom: 10px;">
                         <span style="color: #a7f3d0; font-weight: 600; font-size: 15px;">{attack_type} (Safe)</span><br>
@@ -155,24 +169,6 @@ if menu == "რეალური დროის მონიტორინგ
         else:
             st.warning("ფაილი 'network_traffic.csv' არ არსებობს. გთხოვთ, ჯერ გაუშვათ generate_data.py!")
 
-elif menu == "მოდელის ანალიტიკა":
-    st.subheader("Random Forest მოდელის მეტრიკები")
-    if metrics:
-        st.metric(label="მოდელის საბაზისო სიზუსტე (Accuracy)", value=f"{metrics['accuracy'] * 100:.2f}%")
-        st.markdown("---")
-       
-        st.write("Confusion Matrix (მულტიკლასობრივი ცხრილი):")
-        cm = metrics['confusion_matrix']
-        categories = ["Normal", "DDoS", "Brute-Force", "Port Scan"]
-        cm_df = pd.DataFrame(
-            cm,
-            index=[f"{cat} (რეალური)" for cat in categories],
-            columns=[f"{cat} (პროგნოზი)" for cat in categories]
-        )
-        st.dataframe(cm_df.style.background_gradient(cmap="Blues"), width="stretch")
-        st.caption("განმარტება: ცხრილის დიაგონალზე გაფერადებული უჯრები ასახავს მოდელის მიერ სწორად კლასიფიცირებულ შემთხვევებს.")
-        st.markdown("---")
-       
 elif menu == "პრევენციის ისტორია":
     st.subheader("SQLite მონაცემთა ბაზა")
     conn = sqlite3.connect("siem_logs.db")
@@ -184,7 +180,6 @@ elif menu == "პრევენციის ისტორია":
         ddos_count = len(df_logs[df_logs["details"] == "DDoS შეტევა"])
         brute_count = len(df_logs[df_logs["details"] == "Brute-Force შეტევა"])
         portscan_count = len(df_logs[df_logs["details"] == "Port Scan შეტევა"])
-
         
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("სულ ინციდენტები", total_logs)
@@ -193,5 +188,49 @@ elif menu == "პრევენციის ისტორია":
         col4.metric("Port Scan", portscan_count)
 
         st.dataframe(df_logs, width="stretch")
+        
+        st.markdown("---")
+        st.write("ლოგების მართვა და ექსპორტი")
+        col_exp1, col_exp2, col_clear = st.columns(3)
+        
+        csv_data = df_logs.to_csv(index=False).encode('utf-8')
+        col_exp1.download_button("გადმოწერე ლოგები (CSV)", data=csv_data, file_name="siem_logs.csv", mime="text/csv")
+        
+        json_data = df_logs.to_json(orient="records", indent=4).encode('utf-8')
+        col_exp2.download_button("გადმოწერე ლოგები (JSON)", data=json_data, file_name="siem_logs.json", mime="application/json")
+        
+        if col_clear.button("ისტორიის გასუფთავება"):
+            conn = sqlite3.connect("siem_logs.db")
+            c = conn.cursor()
+            c.execute("DELETE FROM security_logs")
+            conn.commit()
+            conn.close()
+            st.success("ისტორია წარმატებით გასუფთავდა!")
+            st.rerun()
     else:
         st.info("ბაზაში ინციდენტები ჯერ არ ფიქსირდება.")
+
+elif menu == "მოდელის ანალიტიკა":
+    st.subheader("Random Forest მოდელის მეტრიკები")
+    if metrics:
+        st.metric(label="მოდელის საბაზისო სიზუსტე (Accuracy)", value=f"{metrics['accuracy'] * 100:.2f}%")
+        st.markdown("---")
+        
+        st.write("Confusion Matrix (მულტიკლასობრივი ცხრილი):")
+        cm = metrics['confusion_matrix']
+        categories = ["Normal", "DDoS", "Brute-Force", "Port Scan"]
+        cm_df = pd.DataFrame(
+            cm,
+            index=[f"{cat} (რეალური)" for cat in categories],
+            columns=[f"{cat} (პროგნოზი)" for cat in categories]
+        )
+        st.dataframe(cm_df.style.background_gradient(cmap="Blues"), width="stretch")
+        
+        # დეტალური ახსნა კომისიისთვის
+        st.write("მატრიცის მათემატიკური ანალიზი:")
+        st.markdown("""
+        * **სწორი ამოცნობა :** მოდელმა ნორმალური ტრაფიკის, DDoS-ის, Brute-Force-ისა და Port Scan-ის შემთხვევების აბსოლუტური უმრავლესობა სწორად დააკლასიფიცირა (ფიქსირდება დიაგონალზე).
+        * **ანომალიების გავლენა:** მონაცემებში არსებული 5%-იანი შემთხვევითი ანომალიების გამო, ფიქსირდება მცირე ცდომილებები, რაც რეალურ გარემოში აპლიკაციის მუშაობის სიმულაციაა და გამორიცხავს მოდელის ხელოვნურ გადატვირთვას.
+        """)
+        
+        

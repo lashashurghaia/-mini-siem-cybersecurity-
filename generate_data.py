@@ -67,5 +67,4 @@ df = pd.DataFrame(
 )
 
 df.to_csv("network_traffic.csv", index=False)
-
 print("ახალი ბაზა წარმატებით შეიქმნა!") 
